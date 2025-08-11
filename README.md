@@ -1,73 +1,93 @@
-# Welcome to your Lovable project
+🌿 Wellness Session Platform (Frontend-Only Demo)
+📖 Overview
+This project is a frontend-only implementation of the Arvyax Full Stack Internship Assignment.
+It demonstrates authentication flows, session management, draft saving, and publishing — using mock authentication and local storage to simulate backend functionality.
 
-## Project info
+The app is fully deployed and can be used live here:
+🔗 Live Demo: https://wellness-session-platform.lovable.app
 
-**URL**: https://lovable.dev/projects/6f4429df-9a18-4ca7-b104-07e3a4894727
+✨ Features
+Mock Authentication (login/register using local storage)
 
-## How can I edit this code?
+Protected Routes based on mock JWT tokens
 
-There are several ways of editing your application.
+View Public Wellness Sessions (predefined mock data)
 
-**Use Lovable**
+Create, Edit, and Save Drafts
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/6f4429df-9a18-4ca7-b104-07e3a4894727) and start prompting.
+Publish Sessions
 
-Changes made via Lovable will be committed automatically to this repo.
+Auto-Save Drafts after 5 seconds of inactivity
 
-**Use your preferred IDE**
+Responsive UI built with Tailwind CSS + Shadcn UI
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+🛠 Tech Stack
+Frontend: React + Vite + TypeScript
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+UI: Tailwind CSS + Shadcn UI
 
-Follow these steps:
+State Management: React Hooks + Local Storage
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+Auth: Mock JWT logic (no real backend)
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+Deployment: Lovable
 
-# Step 3: Install the necessary dependencies.
-npm i
+⚠️ Notes on Authentication
+This project does not have a backend server.
+Authentication and session data are simulated:
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+Users are stored in local storage
+
+Tokens are mock-generated
+
+All API calls are mocked within the frontend code
+
+This allows you to experience the full flow of the app without needing a live backend.
+If a backend were implemented, the mock API layer could be replaced with real API endpoints.
+
+
+
+📂 Folder Structure
+public/           # Static assets
+src/              # React source code
+  components/     # UI components
+  pages/          # Page-level components
+  utils/          # Helper functions (mock APIs, auth)
+index.html        # Entry HTML file
+package.json      # Project dependencies
+README.md         # Project documentation
+
+🚀 Running Locally
+Clone the repository
+git clone https://github.com/Furqesda/wellness-session-platform.git
+cd wellness-session-platform
+
+Install dependencies
+npm install
+
+Start the development server
 npm run dev
-```
 
-**Edit a file directly in GitHub**
+Open http://localhost:5173 in your browser.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+📌 Mock API Endpoints (Simulated)
+| Method | Endpoint                | Description                                            |
+| ------ | ----------------------- | ------------------------------------------------------ |
+| POST   | /register               | Registers a new user (local storage)                   |
+| POST   | /login                  | Logs in a user, returns mock token                     |
+| GET    | /sessions               | Fetches public wellness sessions                       |
+| GET    | /my-sessions            | Fetches drafts & published sessions for logged-in user |
+| POST   | /my-sessions/save-draft | Saves/updates a draft session                          |
+| POST   | /my-sessions/publish    | Publishes a draft session                              |
 
-**Use GitHub Codespaces**
+📦 Deployment
+The app is deployed via Lovable and automatically updates with GitHub commits.
+For deployment:
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Push to the connected GitHub repo.
 
-## What technologies are used for this project?
+Lovable rebuilds and redeploys automatically.
 
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/6f4429df-9a18-4ca7-b104-07e3a4894727) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+📜 License
+This project is for educational/demo purposes only.
+Not intended for production use without a backend.
