@@ -8,35 +8,54 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Wellness-inspired color palette */
+    --background: 157 25% 97%;
+    --foreground: 158 15% 25%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 158 15% 25%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 158 15% 25%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Soft sage green primary */
+    --primary: 158 45% 60%;
+    --primary-foreground: 0 0% 100%;
+    
+    /* Gentle lavender secondary */
+    --secondary: 270 15% 88%;
+    --secondary-foreground: 158 15% 25%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Soft muted tones */
+    --muted: 157 20% 94%;
+    --muted-foreground: 158 10% 55%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Warm accent */
+    --accent: 45 85% 85%;
+    --accent-foreground: 158 15% 25%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 70% 65%;
+    --destructive-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --border: 157 15% 88%;
+    --input: 157 15% 92%;
+    --ring: 158 45% 60%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-
-    --radius: 0.5rem;
+    --radius: 1rem;
+    
+    /* Wellness gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(158 45% 60%), hsl(180 40% 70%));
+    --gradient-secondary: linear-gradient(135deg, hsl(270 15% 88%), hsl(200 20% 90%));
+    --gradient-hero: linear-gradient(135deg, hsl(158 30% 85%) 0%, hsl(180 25% 90%) 50%, hsl(270 20% 92%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%) 0%, hsl(157 25% 97%) 100%);
+    
+    /* Wellness shadows */
+    --shadow-wellness: 0 4px 20px hsl(158 45% 60% / 0.15);
+    --shadow-card: 0 2px 15px hsl(158 20% 40% / 0.08);
+    --shadow-hover: 0 8px 30px hsl(158 45% 60% / 0.2);
+    
+    /* Wellness animations */
+    --transition-wellness: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
     --sidebar-background: 0 0% 98%;
 
@@ -56,33 +75,45 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    /* Dark wellness theme */
+    --background: 158 20% 8%;
+    --foreground: 157 15% 90%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 158 15% 12%;
+    --card-foreground: 157 15% 90%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 158 15% 12%;
+    --popover-foreground: 157 15% 90%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 158 45% 70%;
+    --primary-foreground: 158 20% 8%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 158 10% 18%;
+    --secondary-foreground: 157 15% 90%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 158 10% 15%;
+    --muted-foreground: 158 8% 65%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 45 60% 75%;
+    --accent-foreground: 158 20% 8%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 70% 65%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --border: 158 10% 20%;
+    --input: 158 10% 18%;
+    --ring: 158 45% 70%;
+    
+    /* Dark wellness gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(158 45% 70%), hsl(180 40% 75%));
+    --gradient-secondary: linear-gradient(135deg, hsl(158 10% 18%), hsl(200 15% 22%));
+    --gradient-hero: linear-gradient(135deg, hsl(158 20% 12%) 0%, hsl(180 15% 15%) 50%, hsl(270 15% 18%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(158 15% 12%) 0%, hsl(157 20% 10%) 100%);
+    
+    /* Dark wellness shadows */
+    --shadow-wellness: 0 4px 20px hsl(158 45% 70% / 0.25);
+    --shadow-card: 0 2px 15px hsl(0 0% 0% / 0.3);
+    --shadow-hover: 0 8px 30px hsl(158 45% 70% / 0.35);
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -100,6 +131,36 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-poppins;
+  }
+  
+  /* Wellness utility classes */
+  .wellness-gradient {
+    background: var(--gradient-primary);
+  }
+  
+  .hero-gradient {
+    background: var(--gradient-hero);
+  }
+  
+  .card-gradient {
+    background: var(--gradient-card);
+  }
+  
+  .wellness-shadow {
+    box-shadow: var(--shadow-wellness);
+  }
+  
+  .card-shadow {
+    box-shadow: var(--shadow-card);
+  }
+  
+  .wellness-transition {
+    transition: var(--transition-wellness);
+  }
+  
+  .hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-hover);
   }
 }
