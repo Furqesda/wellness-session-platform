@@ -109,6 +109,8 @@ const BrowseSessions = () => {
               key={session.id}
               session={session}
               showActions={false}
+              showFavorites={true}
+              showCompletion={true}
             />
           ))}
         </div>

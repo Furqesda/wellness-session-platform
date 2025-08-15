@@ -40,7 +40,15 @@ export const authService = {
       name: email.split('@')[0] // Use email prefix as name
     };
 
+    // Initialize user profile and first login tracking
     localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ user }));
+    
+    // Track first login date
+    const firstLoginKey = `wellness_first_login_${user.id}`;
+    if (!localStorage.getItem(firstLoginKey)) {
+      localStorage.setItem(firstLoginKey, new Date().toISOString());
+    }
+    
     return { success: true, user };
   },
 
@@ -57,6 +65,11 @@ export const authService = {
     };
 
     localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ user }));
+    
+    // Track first login date for new users
+    const firstLoginKey = `wellness_first_login_${user.id}`;
+    localStorage.setItem(firstLoginKey, new Date().toISOString());
+    
     return { success: true, user };
   },
 

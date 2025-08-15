@@ -1,15 +1,22 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { WellnessSession } from '@/lib/sessions';
-import { Clock, User, Heart, Brain, Flower2, Wind } from 'lucide-react';
+import { favoritesService } from '@/lib/favorites';
+import { completionService } from '@/lib/completion';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { Clock, User, Heart, Brain, Flower2, Wind, Check } from 'lucide-react';
 
 interface SessionCardProps {
   session: WellnessSession;
   onEdit?: (session: WellnessSession) => void;
   onDelete?: (sessionId: string) => void;
   showActions?: boolean;
+  showFavorites?: boolean;
+  showCompletion?: boolean;
+  onFavoriteChange?: () => void;
 }
 
 const getSessionIcon = (type: WellnessSession['type']) => {
@@ -44,8 +51,47 @@ export const SessionCard: React.FC<SessionCardProps> = ({
   session,
   onEdit,
   onDelete,
-  showActions = false
+  showActions = false,
+  showFavorites = true,
+  showCompletion = true,
+  onFavoriteChange
 }) => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [isFavorited, setIsFavorited] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setIsFavorited(favoritesService.isFavorited(session.id, user.id));
+      setIsCompleted(completionService.isSessionCompletedToday(session.id, user.id));
+    }
+  }, [session.id, user]);
+
+  const handleFavoriteToggle = () => {
+    if (!user) return;
+    
+    const newFavStatus = favoritesService.toggleFavorite(session.id, user.id);
+    setIsFavorited(newFavStatus);
+    onFavoriteChange?.();
+    
+    toast({
+      title: newFavStatus ? "Added to Favorites" : "Removed from Favorites",
+      description: `"${session.title}" has been ${newFavStatus ? 'added to' : 'removed from'} your favorites.`
+    });
+  };
+
+  const handleMarkComplete = () => {
+    if (!user) return;
+    
+    completionService.markSessionComplete(session.id, user.id, session.duration);
+    setIsCompleted(true);
+    
+    toast({
+      title: "Session Completed!",
+      description: `Great job completing "${session.title}"! You practiced for ${session.duration} minutes.`
+    });
+  };
   return (
     <Card className="card-gradient border-border/50 hover-lift wellness-transition group">
       <CardHeader className="pb-3">
@@ -68,6 +114,20 @@ export const SessionCard: React.FC<SessionCardProps> = ({
               </div>
             </div>
           </div>
+          
+          {/* Favorite Button */}
+          {showFavorites && user && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleFavoriteToggle}
+              className={`p-2 hover-lift wellness-transition ${
+                isFavorited ? 'text-red-500 hover:text-red-600' : 'text-muted-foreground hover:text-red-500'
+              }`}
+            >
+              <Heart className={`h-5 w-5 ${isFavorited ? 'fill-current' : ''}`} />
+            </Button>
+          )}
         </div>
       </CardHeader>
 
@@ -90,6 +150,28 @@ export const SessionCard: React.FC<SessionCardProps> = ({
             )}
           </div>
         </div>
+
+        {/* Completion Button */}
+        {showCompletion && user && !isCompleted && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleMarkComplete}
+            className="w-full mt-3 hover-lift wellness-transition"
+          >
+            <Check className="mr-2 h-4 w-4" />
+            Mark as Completed
+          </Button>
+        )}
+
+        {isCompleted && (
+          <div className="flex items-center justify-center space-x-2 mt-3 p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
+            <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+            <span className="text-sm text-green-600 dark:text-green-400 font-medium">
+              Completed Today
+            </span>
+          </div>
+        )}
 
         {showActions && (
           <div className="flex items-center space-x-2 pt-2">

@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { SessionCard } from '@/components/sessions/SessionCard';
 import { CreateSessionForm } from '@/components/sessions/CreateSessionForm';
+import { ProgressStats } from '@/components/progress/ProgressStats';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { sessionsService, WellnessSession } from '@/lib/sessions';
+import { completionService } from '@/lib/completion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, BookOpen, Heart } from 'lucide-react';
@@ -16,6 +18,7 @@ const MySessions = () => {
   const [sessions, setSessions] = useState<WellnessSession[]>([]);
   const [editingSession, setEditingSession] = useState<WellnessSession | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [userProgress, setUserProgress] = useState(completionService.getUserProgress(''));
 
   // Redirect if not authenticated
   React.useEffect(() => {
@@ -28,6 +31,7 @@ const MySessions = () => {
     if (user) {
       const userSessions = sessionsService.getUserSessions(user.id);
       setSessions(userSessions);
+      setUserProgress(completionService.getUserProgress(user.id));
     }
   }, [user]);
 
@@ -104,14 +108,17 @@ const MySessions = () => {
           </Button>
         </div>
 
-        {/* Stats */}
+        {/* Progress Stats */}
+        <ProgressStats progress={userProgress} />
+
+        {/* Sessions Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-card card-gradient border-border/50 rounded-2xl p-6 text-center">
             <div className="wellness-gradient p-3 rounded-xl w-fit mx-auto mb-3">
               <BookOpen className="h-6 w-6 text-white" />
             </div>
             <div className="text-2xl font-bold text-foreground">{sessions.length}</div>
-            <div className="text-sm text-muted-foreground">Total Sessions</div>
+            <div className="text-sm text-muted-foreground">Created Sessions</div>
           </div>
           
           <div className="bg-card card-gradient border-border/50 rounded-2xl p-6 text-center">
@@ -131,7 +138,7 @@ const MySessions = () => {
             <div className="text-2xl font-bold text-foreground">
               {sessions.reduce((total, session) => total + session.duration, 0)}
             </div>
-            <div className="text-sm text-muted-foreground">Total Minutes</div>
+            <div className="text-sm text-muted-foreground">Session Duration</div>
           </div>
         </div>
 
