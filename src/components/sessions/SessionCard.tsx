@@ -7,7 +7,8 @@ import { favoritesService } from '@/lib/favorites';
 import { completionService } from '@/lib/completion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Clock, User, Heart, Brain, Flower2, Wind, Check } from 'lucide-react';
+import { VideoModal } from './VideoModal';
+import { Clock, User, Heart, Brain, Flower2, Wind, Check, Play } from 'lucide-react';
 
 interface SessionCardProps {
   session: WellnessSession;
@@ -60,6 +61,7 @@ export const SessionCard: React.FC<SessionCardProps> = ({
   const { toast } = useToast();
   const [isFavorited, setIsFavorited] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -92,9 +94,29 @@ export const SessionCard: React.FC<SessionCardProps> = ({
       description: `Great job completing "${session.title}"! You practiced for ${session.duration} minutes.`
     });
   };
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't open video if clicking on action buttons
+    if ((e.target as HTMLElement).closest('button')) return;
+    
+    if (session.videoUrl) {
+      setIsVideoModalOpen(true);
+    }
+  };
   return (
-    <Card className="card-gradient border-border/50 hover-lift wellness-transition group">
-      <CardHeader className="pb-3">
+    <>
+      <Card 
+        className={`card-gradient border-border/50 hover-lift wellness-transition group ${
+          session.videoUrl ? 'cursor-pointer' : ''
+        }`}
+        onClick={handleCardClick}
+      >
+        <CardHeader className="pb-3">
+          {session.videoUrl && (
+            <div className="absolute top-4 right-4 z-10 bg-black/60 rounded-full p-2 opacity-0 group-hover:opacity-100 wellness-transition">
+              <Play className="h-4 w-4 text-white fill-white" />
+            </div>
+          )}
         <div className="flex items-start justify-between">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-primary/10 rounded-lg">
@@ -195,5 +217,12 @@ export const SessionCard: React.FC<SessionCardProps> = ({
         )}
       </CardContent>
     </Card>
+    
+    <VideoModal
+      session={session}
+      isOpen={isVideoModalOpen}
+      onClose={() => setIsVideoModalOpen(false)}
+    />
+    </>
   );
 };

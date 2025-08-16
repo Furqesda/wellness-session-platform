@@ -6,6 +6,7 @@ export interface WellnessSession {
   duration: number; // in minutes
   difficulty: 'beginner' | 'intermediate' | 'advanced';
   instructor?: string;
+  videoUrl?: string;
   isPublic: boolean;
   createdBy: string;
   createdAt: string;
@@ -24,6 +25,7 @@ const DEFAULT_PUBLIC_SESSIONS: WellnessSession[] = [
     duration: 10,
     difficulty: 'beginner',
     instructor: 'Sarah Chen',
+    videoUrl: 'https://www.youtube.com/watch?v=HNab2YqCCiM',
     isPublic: true,
     createdBy: 'system',
     createdAt: new Date().toISOString()
@@ -36,6 +38,7 @@ const DEFAULT_PUBLIC_SESSIONS: WellnessSession[] = [
     duration: 15,
     difficulty: 'beginner',
     instructor: 'Marcus Thompson',
+    videoUrl: 'https://www.youtube.com/watch?v=oN8xV3Kb5-Q',
     isPublic: true,
     createdBy: 'system',
     createdAt: new Date().toISOString()
@@ -48,6 +51,7 @@ const DEFAULT_PUBLIC_SESSIONS: WellnessSession[] = [
     duration: 30,
     difficulty: 'intermediate',
     instructor: 'Lila Patel',
+    videoUrl: 'https://www.youtube.com/watch?v=Vr3h5X9kmUo',
     isPublic: true,
     createdBy: 'system',
     createdAt: new Date().toISOString()
@@ -60,6 +64,7 @@ const DEFAULT_PUBLIC_SESSIONS: WellnessSession[] = [
     duration: 20,
     difficulty: 'beginner',
     instructor: 'David Kim',
+    videoUrl: 'https://www.youtube.com/watch?v=uqtIqCKjkuc',
     isPublic: true,
     createdBy: 'system',
     createdAt: new Date().toISOString()
