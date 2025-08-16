@@ -15,7 +15,7 @@ interface VideoModalProps {
 
 const getYouTubeEmbedUrl = (url: string): string => {
   const videoId = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/)?.[1];
-  return videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1` : '';
+  return videoId ? `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1` : '';
 };
 
 export const VideoModal: React.FC<VideoModalProps> = ({ session, isOpen, onClose }) => {
@@ -24,6 +24,7 @@ export const VideoModal: React.FC<VideoModalProps> = ({ session, isOpen, onClose
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isSessionActive, setIsSessionActive] = useState(false);
 
   useEffect(() => {
     if (user && session) {
@@ -31,25 +32,56 @@ export const VideoModal: React.FC<VideoModalProps> = ({ session, isOpen, onClose
     }
   }, [session, user]);
 
+  // Reset state when modal opens/closes
+  useEffect(() => {
+    if (!isOpen) {
+      setElapsedTime(0);
+      setIsSessionActive(false);
+      setIsPlaying(false);
+    }
+  }, [isOpen]);
+
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    if (isPlaying && elapsedTime < session?.duration * 60) {
+    if (isSessionActive && elapsedTime < session?.duration * 60) {
       interval = setInterval(() => {
         setElapsedTime(prev => prev + 1);
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [isPlaying, elapsedTime, session?.duration]);
+  }, [isSessionActive, elapsedTime, session?.duration]);
+
+  const handleStartSession = () => {
+    setIsSessionActive(true);
+    setIsPlaying(true);
+    setElapsedTime(0);
+  };
+
+  const handleStopSession = () => {
+    if (!user || !session || elapsedTime === 0) return;
+    
+    const elapsedMinutes = Math.ceil(elapsedTime / 60); // Round up to nearest minute
+    completionService.markSessionComplete(session.id, user.id, elapsedMinutes);
+    setIsCompleted(true);
+    setIsSessionActive(false);
+    setIsPlaying(false);
+    
+    toast({
+      title: "Session Completed!",
+      description: `Great job! You practiced "${session.title}" for ${elapsedMinutes} minutes.`
+    });
+  };
 
   const handleMarkComplete = () => {
     if (!user || !session) return;
     
-    completionService.markSessionComplete(session.id, user.id, session.duration);
+    const elapsedMinutes = elapsedTime > 0 ? Math.ceil(elapsedTime / 60) : session.duration;
+    completionService.markSessionComplete(session.id, user.id, elapsedMinutes);
     setIsCompleted(true);
     
     toast({
       title: "Session Completed!",
-      description: `Great job completing "${session.title}"! You practiced for ${session.duration} minutes.`
+      description: `Great job completing "${session.title}"! You practiced for ${elapsedMinutes} minutes.`
     });
   };
 
@@ -85,17 +117,57 @@ export const VideoModal: React.FC<VideoModalProps> = ({ session, isOpen, onClose
         </DialogHeader>
         
         <div className="flex-1 p-6 pt-0 space-y-4">
-          {/* Video Player */}
+          {/* Video Player and Session Controls */}
           {embedUrl ? (
-            <div className="relative w-full h-[50vh] bg-black rounded-lg overflow-hidden">
-              <iframe
-                src={embedUrl}
-                title={session.title}
-                className="absolute inset-0 w-full h-full"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                onLoad={() => setIsPlaying(true)}
-              />
+            <div className="space-y-4">
+              <div className="relative w-full h-[50vh] bg-black rounded-lg overflow-hidden">
+                {!isSessionActive ? (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-10">
+                    <div className="text-center space-y-4">
+                      <h3 className="text-white text-lg font-medium">Ready to start your session?</h3>
+                      <Button 
+                        onClick={handleStartSession}
+                        className="hover-lift wellness-transition"
+                        size="lg"
+                      >
+                        Start Session
+                      </Button>
+                      <p className="text-white/80 text-sm">
+                        <a 
+                          href={session.videoUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="underline hover:text-white wellness-transition"
+                        >
+                          Open in YouTube
+                        </a>
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
+                <iframe
+                  src={embedUrl}
+                  title={session.title}
+                  className="absolute inset-0 w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+              
+              {/* Session Control Buttons */}
+              {user && !isCompleted && isSessionActive && (
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleStopSession}
+                    variant="destructive"
+                    className="flex-1 hover-lift wellness-transition"
+                    size="lg"
+                    disabled={elapsedTime === 0}
+                  >
+                    Stop Session
+                  </Button>
+                </div>
+              )}
             </div>
           ) : (
             <div className="flex items-center justify-center h-64 bg-muted rounded-lg">
