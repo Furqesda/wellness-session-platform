@@ -91,9 +91,13 @@ export const VideoModal: React.FC<VideoModalProps> = ({ session, isOpen, onClose
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  if (!session || !session.videoUrl) return null;
+  if (!session) return null;
 
-  const embedUrl = getYouTubeEmbedUrl(session.videoUrl);
+  const embedUrl = session.videoType === 'youtube' && session.videoUrl ? getYouTubeEmbedUrl(session.videoUrl) : '';
+  const customVideoUrl = session.videoType === 'custom' && session.customVideoFile 
+    ? (typeof session.customVideoFile === 'string' ? session.customVideoFile : URL.createObjectURL(session.customVideoFile))
+    : '';
+  const hasVideo = embedUrl || customVideoUrl;
   const totalSeconds = session.duration * 60;
   const progress = Math.min((elapsedTime / totalSeconds) * 100, 100);
 
@@ -118,7 +122,7 @@ export const VideoModal: React.FC<VideoModalProps> = ({ session, isOpen, onClose
         
         <div className="flex-1 p-6 pt-0 space-y-4">
           {/* Video Player and Session Controls */}
-          {embedUrl ? (
+          {hasVideo ? (
             <div className="space-y-4">
               <div className="relative w-full h-[50vh] bg-black rounded-lg overflow-hidden">
                 {!isSessionActive ? (
@@ -132,26 +136,43 @@ export const VideoModal: React.FC<VideoModalProps> = ({ session, isOpen, onClose
                       >
                         Start Session
                       </Button>
-                      <p className="text-white/80 text-sm">
-                        <a 
-                          href={session.videoUrl} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="underline hover:text-white wellness-transition"
-                        >
-                          Open in YouTube
-                        </a>
-                      </p>
+                      {session.videoType === 'youtube' && session.videoUrl && (
+                        <p className="text-white/80 text-sm">
+                          <a 
+                            href={session.videoUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="underline hover:text-white wellness-transition"
+                          >
+                            Open in YouTube
+                          </a>
+                        </p>
+                      )}
                     </div>
                   </div>
                 ) : null}
-                <iframe
-                  src={embedUrl}
-                  title={session.title}
-                  className="absolute inset-0 w-full h-full"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
+                
+                {/* YouTube Video */}
+                {session.videoType === 'youtube' && embedUrl && (
+                  <iframe
+                    src={embedUrl}
+                    title={session.title}
+                    className="absolute inset-0 w-full h-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                )}
+                
+                {/* Custom Video */}
+                {session.videoType === 'custom' && customVideoUrl && (
+                  <video
+                    src={customVideoUrl}
+                    controls
+                    className="absolute inset-0 w-full h-full object-cover"
+                  >
+                    Your browser does not support the video tag.
+                  </video>
+                )}
               </div>
               
               {/* Session Control Buttons */}
@@ -171,7 +192,7 @@ export const VideoModal: React.FC<VideoModalProps> = ({ session, isOpen, onClose
             </div>
           ) : (
             <div className="flex items-center justify-center h-64 bg-muted rounded-lg">
-              <p className="text-muted-foreground">Video not available</p>
+              <p className="text-muted-foreground">No video available for this session</p>
             </div>
           )}
 
