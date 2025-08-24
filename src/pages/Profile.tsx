@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { profileService, UserProfile } from '@/lib/profile';
 import { completionService } from '@/lib/completion';
 import { favoritesService } from '@/lib/favorites';
 import { sessionsService } from '@/lib/sessions';
 import { useToast } from '@/hooks/use-toast';
-import { User, Calendar, Trophy, Heart, BookOpen, Edit } from 'lucide-react';
+import { EditProfileModal } from '@/components/profile/EditProfileModal';
+import { User, Calendar, Trophy, Heart, BookOpen, Edit, Target, TrendingUp } from 'lucide-react';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -19,7 +20,6 @@ const Profile = () => {
   const { toast } = useToast();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editDisplayName, setEditDisplayName] = useState('');
 
   // Redirect if not authenticated
   React.useEffect(() => {
@@ -30,6 +30,8 @@ const Profile = () => {
 
   useEffect(() => {
     if (user) {
+      // Initialize taken emojis on first load
+      profileService.initializeTakenEmojis();
       loadProfile();
     }
   }, [user]);
@@ -47,20 +49,36 @@ const Profile = () => {
       });
     }
     setProfile(userProfile);
-    setEditDisplayName(userProfile.displayName);
   };
 
-  const handleSaveProfile = () => {
-    if (!user || !profile) return;
-    
-    profileService.updateDisplayName(user.id, editDisplayName);
-    setProfile({ ...profile, displayName: editDisplayName });
-    setIsEditModalOpen(false);
-    
-    toast({
-      title: "Profile Updated",
-      description: "Your profile has been successfully updated."
-    });
+  const handleProfileUpdate = (updatedProfile: UserProfile) => {
+    setProfile(updatedProfile);
+  };
+
+  const renderAvatar = () => {
+    if (profile?.emojiAvatar) {
+      return (
+        <div className="wellness-gradient p-4 rounded-2xl w-fit mx-auto mb-6 text-4xl">
+          {profile.emojiAvatar}
+        </div>
+      );
+    } else if (profile?.profilePicture) {
+      return (
+        <div className="w-20 h-20 rounded-2xl overflow-hidden mx-auto mb-6 border-4 border-primary/20">
+          <img
+            src={profile.profilePicture}
+            alt="Profile"
+            className="w-full h-full object-cover"
+          />
+        </div>
+      );
+    } else {
+      return (
+        <div className="wellness-gradient p-4 rounded-2xl w-fit mx-auto mb-6">
+          <User className="h-12 w-12 text-white" />
+        </div>
+      );
+    }
   };
 
   if (!isAuthenticated || !user || !profile) {
@@ -71,20 +89,132 @@ const Profile = () => {
   const favoriteCount = favoritesService.getFavoritesByUser(user.id).length;
   const userSessions = sessionsService.getUserSessions(user.id);
 
+  // Calculate progress percentages for visual representation
+  const maxSessions = Math.max(userSessions.length, 10);
+  const maxCompletedSessions = Math.max(progress.totalCompletedSessions, 10);
+  const maxMinutes = Math.max(progress.totalMinutesPracticed, 60);
+  const maxFavorites = Math.max(favoriteCount, 5);
+
+  const statsCards = [
+    {
+      title: 'Sessions Created',
+      value: userSessions.length,
+      icon: BookOpen,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-50 dark:bg-blue-900/20',
+      progress: Math.min((userSessions.length / maxSessions) * 100, 100),
+      description: `${userSessions.length} wellness sessions shared`
+    },
+    {
+      title: 'Completed Sessions',
+      value: progress.totalCompletedSessions,
+      icon: Trophy,
+      color: 'text-green-600',
+      bgColor: 'bg-green-50 dark:bg-green-900/20',
+      progress: Math.min((progress.totalCompletedSessions / maxCompletedSessions) * 100, 100),
+      description: `${progress.totalCompletedSessions} sessions completed`
+    },
+    {
+      title: 'Minutes Practiced',
+      value: progress.totalMinutesPracticed,
+      icon: Calendar,
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-50 dark:bg-purple-900/20',
+      progress: Math.min((progress.totalMinutesPracticed / maxMinutes) * 100, 100),
+      description: `${Math.floor(progress.totalMinutesPracticed / 60)}h ${progress.totalMinutesPracticed % 60}m total`
+    },
+    {
+      title: 'Favorite Sessions',
+      value: favoriteCount,
+      icon: Heart,
+      color: 'text-red-600',
+      bgColor: 'bg-red-50 dark:bg-red-900/20',
+      progress: Math.min((favoriteCount / maxFavorites) * 100, 100),
+      description: `${favoriteCount} sessions in favorites`
+    }
+  ];
+
   return (
     <div className="min-h-screen bg-muted/30 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-12">
-          <div className="wellness-gradient p-4 rounded-2xl w-fit mx-auto mb-6">
-            <User className="h-12 w-12 text-white" />
+          {renderAvatar()}
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <h1 className="text-4xl font-bold text-foreground">
+              {profile.displayName}
+            </h1>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsEditModalOpen(true)}
+              className="hover-lift wellness-transition"
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
           </div>
-          <h1 className="text-4xl font-bold text-foreground mb-4">
-            {profile.displayName}
-          </h1>
           <p className="text-xl text-muted-foreground">
             Member since {new Date(profile.dateJoined).toLocaleDateString()}
           </p>
+        </div>
+
+        {/* Motivational Message */}
+        {progress.totalCompletedSessions === 0 && (
+          <Card className="card-gradient border-border/50 mb-8 text-center">
+            <CardContent className="pt-6">
+              <div className="wellness-gradient p-3 rounded-xl w-fit mx-auto mb-4">
+                <Target className="h-8 w-8 text-white" />
+              </div>
+              <h3 className="text-xl font-semibold text-foreground mb-2">
+                Ready to Begin Your Wellness Journey?
+              </h3>
+              <p className="text-muted-foreground mb-4">
+                Take the first step on your wellness journey – choose a session to begin!
+              </p>
+              <Button
+                onClick={() => navigate('/browse')}
+                className="wellness-gradient border-0 hover-lift wellness-transition"
+              >
+                Browse Sessions
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Statistics Dashboard */}
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-6">
+            <TrendingUp className="h-5 w-5 text-primary" />
+            <h2 className="text-2xl font-bold text-foreground">Your Wellness Stats</h2>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {statsCards.map((stat, index) => {
+              const Icon = stat.icon;
+              return (
+                <Card key={index} className="card-gradient border-border/50 hover-lift wellness-transition">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <div className={`${stat.bgColor} p-3 rounded-xl w-fit`}>
+                        <Icon className={`h-6 w-6 ${stat.color}`} />
+                      </div>
+                      <Badge variant="outline" className="text-xs">
+                        {Math.round(stat.progress)}%
+                      </Badge>
+                    </div>
+                    <CardTitle className="text-lg font-semibold">{stat.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-baseline justify-between">
+                      <div className="text-3xl font-bold text-foreground">{stat.value}</div>
+                    </div>
+                    <Progress value={stat.progress} className="h-2" />
+                    <p className="text-sm text-muted-foreground">{stat.description}</p>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
         </div>
 
         {/* Profile Info Card */}
@@ -92,15 +222,6 @@ const Profile = () => {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Profile Information</span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsEditModalOpen(true)}
-                className="hover-lift wellness-transition"
-              >
-                <Edit className="mr-2 h-4 w-4" />
-                Edit Profile
-              </Button>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -131,92 +252,15 @@ const Profile = () => {
           </CardContent>
         </Card>
 
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="card-gradient border-border/50 text-center">
-            <CardHeader className="pb-3">
-              <div className="wellness-gradient p-3 rounded-xl w-fit mx-auto">
-                <BookOpen className="h-6 w-6 text-white" />
-              </div>
-              <CardTitle className="text-sm font-medium">Sessions Created</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">{userSessions.length}</div>
-            </CardContent>
-          </Card>
-
-          <Card className="card-gradient border-border/50 text-center">
-            <CardHeader className="pb-3">
-              <div className="wellness-gradient p-3 rounded-xl w-fit mx-auto">
-                <Trophy className="h-6 w-6 text-white" />
-              </div>
-              <CardTitle className="text-sm font-medium">Completed Sessions</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">{progress.totalCompletedSessions}</div>
-            </CardContent>
-          </Card>
-
-          <Card className="card-gradient border-border/50 text-center">
-            <CardHeader className="pb-3">
-              <div className="wellness-gradient p-3 rounded-xl w-fit mx-auto">
-                <Calendar className="h-6 w-6 text-white" />
-              </div>
-              <CardTitle className="text-sm font-medium">Minutes Practiced</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">{progress.totalMinutesPracticed}</div>
-            </CardContent>
-          </Card>
-
-          <Card className="card-gradient border-border/50 text-center">
-            <CardHeader className="pb-3">
-              <div className="wellness-gradient p-3 rounded-xl w-fit mx-auto">
-                <Heart className="h-6 w-6 text-white" />
-              </div>
-              <CardTitle className="text-sm font-medium">Favorite Sessions</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">{favoriteCount}</div>
-            </CardContent>
-          </Card>
-        </div>
-
         {/* Edit Profile Modal */}
-        <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Edit Profile</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="displayName">Display Name</Label>
-                <Input
-                  id="displayName"
-                  value={editDisplayName}
-                  onChange={(e) => setEditDisplayName(e.target.value)}
-                  placeholder="Enter your display name"
-                  className="mt-1"
-                />
-              </div>
-              <div className="flex justify-end space-x-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsEditModalOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleSaveProfile}
-                  className="wellness-gradient border-0"
-                  disabled={!editDisplayName.trim()}
-                >
-                  Save Changes
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+        {profile && (
+          <EditProfileModal
+            isOpen={isEditModalOpen}
+            onClose={() => setIsEditModalOpen(false)}
+            profile={profile}
+            onProfileUpdate={handleProfileUpdate}
+          />
+        )}
       </div>
     </div>
   );
