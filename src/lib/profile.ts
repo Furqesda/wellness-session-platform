@@ -1,194 +1,172 @@
+import { supabase } from '@/integrations/supabase/client';
+
 export interface UserProfile {
-  userId: string;
+  id: string;
   displayName: string;
-  profilePicture?: string;
-  emojiAvatar?: string;
-  dateJoined: string;
-  totalSessionsCreated: number;
+  avatarType: 'emoji' | 'image';
+  avatarValue: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-const PROFILE_STORAGE_KEY = 'wellness_profiles';
-const FIRST_LOGIN_KEY = 'wellness_first_login';
-const TAKEN_AVATARS_KEY = 'wellness_taken_avatars';
-const TAKEN_NAMES_KEY = 'wellness_taken_names';
+export interface UserStats {
+  sessionsCreated: number;
+  completedSessions: number;
+  minutesPracticed: number;
+  favoriteSessions: number;
+}
 
+// Available emojis for avatar selection
 export const AVAILABLE_EMOJIS = [
-  '😊', '😌', '🧘', '🌱', '🌸', '🌺', '🌼', '🌻', '🌷', '🌹',
-  '🦋', '🐝', '🌙', '⭐', '✨', '🌟', '💫', '🌈', '☀️', '🌞',
-  '🎋', '🍃', '🌿', '🌾', '🪴', '🌳', '🌲', '🎍', '🌵', '🌴',
-  '🧚', '🦄', '🐚', '🪨', '💎', '🔮', '🕯️', '🪔', '🧿', '🪬',
-  '🎨', '🎭', '🎪', '🎠', '🎡', '🎢', '🎯', '🎲', '🧩', '🃏',
-  '🎸', '🎹', '🎺', '🎻', '🥁', '🎤', '🎧', '🎵', '🎶', '🎼'
+  '😊', '😎', '🤗', '😄', '😆', '😉', '🙂', '😊', '😇', '🤩',
+  '😍', '🥰', '😘', '😗', '😙', '😚', '🤪', '😜', '😝', '🤭',
+  '🧐', '🤓', '😏', '😒', '🙄', '😬', '🤥', '😶', '😐', '😑',
+  '🦸‍♂️', '🦸‍♀️', '🧙‍♂️', '🧙‍♀️', '🧚‍♂️', '🧚‍♀️', '🧛‍♂️', '🧛‍♀️', '🧜‍♂️', '🧜‍♀️',
+  '🎯', '🎪', '🎨', '🎭', '🎪', '🎵', '🎶', '🎸', '🎹', '🎺',
+  '🌟', '⭐', '✨', '💫', '🌙', '☀️', '🌈', '🔥', '⚡', '💎',
+  '🍀', '🌸', '🌺', '🌻', '🌷', '🌹', '🌼', '🦋', '🐝', '🐞'
 ];
 
 export const profileService = {
-  getAllProfiles(): UserProfile[] {
+  async getUserProfile(userId: string): Promise<UserProfile | null> {
     try {
-      const stored = localStorage.getItem(PROFILE_STORAGE_KEY);
-      return stored ? JSON.parse(stored) : [];
-    } catch (error) {
-      console.error('Error parsing profiles:', error);
-      return [];
-    }
-  },
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
 
-  getUserProfile(userId: string): UserProfile | null {
-    try {
-      const stored = localStorage.getItem(PROFILE_STORAGE_KEY);
-      if (stored) {
-        const profiles: UserProfile[] = JSON.parse(stored);
-        return profiles.find(profile => profile.userId === userId) || null;
-      }
-    } catch (error) {
-      console.error('Error parsing profiles:', error);
-    }
-    return null;
-  },
-
-  createOrUpdateProfile(userId: string, updates: Partial<UserProfile>): UserProfile {
-    try {
-      const stored = localStorage.getItem(PROFILE_STORAGE_KEY);
-      let profiles: UserProfile[] = stored ? JSON.parse(stored) : [];
-      
-      const existingIndex = profiles.findIndex(profile => profile.userId === userId);
-      
-      // Get or set first login date
-      let dateJoined = updates.dateJoined;
-      if (!dateJoined) {
-        const firstLoginStored = localStorage.getItem(`${FIRST_LOGIN_KEY}_${userId}`);
-        if (firstLoginStored) {
-          dateJoined = firstLoginStored;
-        } else {
-          dateJoined = new Date().toISOString();
-          localStorage.setItem(`${FIRST_LOGIN_KEY}_${userId}`, dateJoined);
-        }
+      if (error || !data) {
+        return null;
       }
 
-      const profile: UserProfile = {
-        userId,
-        displayName: updates.displayName || 'Wellness User',
-        profilePicture: updates.profilePicture,
-        emojiAvatar: updates.emojiAvatar,
-        dateJoined: dateJoined,
-        totalSessionsCreated: updates.totalSessionsCreated || 0
+      return {
+        id: data.user_id,
+        displayName: data.display_name || 'User',
+        avatarType: (data.avatar_type as 'emoji' | 'image') || 'emoji',
+        avatarValue: data.avatar_value || '😊',
+        createdAt: data.created_at,
+        updatedAt: data.updated_at
       };
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      return null;
+    }
+  },
 
-      if (existingIndex >= 0) {
-        profiles[existingIndex] = { ...profiles[existingIndex], ...profile };
-      } else {
-        profiles.push(profile);
+  async createOrUpdateProfile(userId: string, profileData: Partial<UserProfile>): Promise<UserProfile> {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .upsert({
+          user_id: userId,
+          display_name: profileData.displayName,
+          avatar_type: profileData.avatarType,
+          avatar_value: profileData.avatarValue
+        })
+        .select()
+        .single();
+
+      if (error) {
+        throw new Error('Failed to update profile');
       }
 
-      localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profiles));
-      return profiles[existingIndex >= 0 ? existingIndex : profiles.length - 1];
+      return {
+        id: data.user_id,
+        displayName: data.display_name || 'User',
+        avatarType: (data.avatar_type as 'emoji' | 'image') || 'emoji',
+        avatarValue: data.avatar_value || '😊',
+        createdAt: data.created_at,
+        updatedAt: data.updated_at
+      };
     } catch (error) {
       console.error('Error updating profile:', error);
-      return {
-        userId,
-        displayName: 'Wellness User',
-        dateJoined: new Date().toISOString(),
-        totalSessionsCreated: 0
-      };
+      throw error;
     }
   },
 
-  updateDisplayName(userId: string, displayName: string): void {
-    const profile = this.getUserProfile(userId);
-    if (profile) {
-      this.createOrUpdateProfile(userId, { ...profile, displayName });
-    }
-  },
-
-  updateProfilePicture(userId: string, profilePicture: string): void {
-    const profile = this.getUserProfile(userId);
-    if (profile) {
-      this.createOrUpdateProfile(userId, { ...profile, profilePicture, emojiAvatar: undefined });
-    }
-  },
-
-  updateEmojiAvatar(userId: string, emojiAvatar: string): boolean {
-    if (this.isEmojiTaken(emojiAvatar)) {
-      return false; // Emoji already taken
-    }
-    
-    const profile = this.getUserProfile(userId);
-    if (profile) {
-      // Remove old emoji from taken list if exists
-      if (profile.emojiAvatar) {
-        this.releaseEmoji(profile.emojiAvatar);
-      }
-      
-      // Mark new emoji as taken
-      this.markEmojiAsTaken(emojiAvatar);
-      
-      this.createOrUpdateProfile(userId, { ...profile, emojiAvatar, profilePicture: undefined });
-      return true;
-    }
-    return false;
-  },
-
-  isDisplayNameTaken(displayName: string, excludeUserId?: string): boolean {
-    const profiles = this.getAllProfiles();
-    return profiles.some(profile => 
-      profile.displayName.toLowerCase() === displayName.toLowerCase() && 
-      profile.userId !== excludeUserId
-    );
-  },
-
-  isEmojiTaken(emoji: string): boolean {
+  async isDisplayNameTaken(displayName: string, currentUserId?: string): Promise<boolean> {
     try {
-      const taken = localStorage.getItem(TAKEN_AVATARS_KEY);
-      const takenEmojis: string[] = taken ? JSON.parse(taken) : [];
-      return takenEmojis.includes(emoji);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .ilike('display_name', displayName);
+
+      if (error) {
+        console.error('Error checking display name:', error);
+        return false;
+      }
+
+      return data.some(profile => profile.user_id !== currentUserId);
     } catch (error) {
-      console.error('Error checking taken emojis:', error);
+      console.error('Error in isDisplayNameTaken:', error);
       return false;
     }
   },
 
-  markEmojiAsTaken(emoji: string): void {
+  async isEmojiTaken(emoji: string, currentUserId?: string): Promise<boolean> {
     try {
-      const taken = localStorage.getItem(TAKEN_AVATARS_KEY);
-      const takenEmojis: string[] = taken ? JSON.parse(taken) : [];
-      if (!takenEmojis.includes(emoji)) {
-        takenEmojis.push(emoji);
-        localStorage.setItem(TAKEN_AVATARS_KEY, JSON.stringify(takenEmojis));
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('avatar_type', 'emoji')
+        .eq('avatar_value', emoji);
+
+      if (error) {
+        console.error('Error checking emoji:', error);
+        return false;
       }
+
+      return data.some(profile => profile.user_id !== currentUserId);
     } catch (error) {
-      console.error('Error marking emoji as taken:', error);
+      console.error('Error in isEmojiTaken:', error);
+      return false;
     }
   },
 
-  releaseEmoji(emoji: string): void {
+  async getUserStats(userId: string): Promise<UserStats> {
     try {
-      const taken = localStorage.getItem(TAKEN_AVATARS_KEY);
-      const takenEmojis: string[] = taken ? JSON.parse(taken) : [];
-      const filteredEmojis = takenEmojis.filter(e => e !== emoji);
-      localStorage.setItem(TAKEN_AVATARS_KEY, JSON.stringify(filteredEmojis));
-    } catch (error) {
-      console.error('Error releasing emoji:', error);
-    }
-  },
+      // Get sessions created count
+      const { count: sessionsCreated } = await supabase
+        .from('sessions')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId);
 
-  getAvailableEmojis(): string[] {
-    try {
-      const taken = localStorage.getItem(TAKEN_AVATARS_KEY);
-      const takenEmojis: string[] = taken ? JSON.parse(taken) : [];
-      return AVAILABLE_EMOJIS.filter(emoji => !takenEmojis.includes(emoji));
-    } catch (error) {
-      console.error('Error getting available emojis:', error);
-      return AVAILABLE_EMOJIS;
-    }
-  },
+      // Get completed sessions count
+      const { count: completedSessions } = await supabase
+        .from('progress')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId);
 
-  // Initialize taken emojis from existing profiles
-  initializeTakenEmojis(): void {
-    const profiles = this.getAllProfiles();
-    const takenEmojis = profiles
-      .filter(p => p.emojiAvatar)
-      .map(p => p.emojiAvatar!)
-      .filter((emoji, index, arr) => arr.indexOf(emoji) === index); // Remove duplicates
-    
-    localStorage.setItem(TAKEN_AVATARS_KEY, JSON.stringify(takenEmojis));
+      // Get total minutes practiced
+      const { data: progressData } = await supabase
+        .from('progress')
+        .select('duration_minutes')
+        .eq('user_id', userId);
+
+      const minutesPracticed = progressData?.reduce((total, record) => 
+        total + (record.duration_minutes || 0), 0) || 0;
+
+      // Get favorite sessions count
+      const { count: favoriteSessions } = await supabase
+        .from('favorites')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId);
+
+      return {
+        sessionsCreated: sessionsCreated || 0,
+        completedSessions: completedSessions || 0,
+        minutesPracticed,
+        favoriteSessions: favoriteSessions || 0
+      };
+    } catch (error) {
+      console.error('Error fetching user stats:', error);
+      return {
+        sessionsCreated: 0,
+        completedSessions: 0,
+        minutesPracticed: 0,
+        favoriteSessions: 0
+      };
+    }
   }
 };

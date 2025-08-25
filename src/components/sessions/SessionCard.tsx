@@ -65,34 +65,55 @@ export const SessionCard: React.FC<SessionCardProps> = ({
 
   useEffect(() => {
     if (user) {
-      setIsFavorited(favoritesService.isFavorited(session.id, user.id));
-      setIsCompleted(completionService.isSessionCompletedToday(session.id, user.id));
+      const loadData = async () => {
+        const isFav = await favoritesService.isFavorite(user.id, session.id);
+        const isComp = await completionService.isSessionCompleted(user.id, session.id);
+        setIsFavorited(isFav);
+        setIsCompleted(isComp);
+      };
+      loadData();
     }
   }, [session.id, user]);
 
-  const handleFavoriteToggle = () => {
+  const handleFavoriteToggle = async () => {
     if (!user) return;
     
-    const newFavStatus = favoritesService.toggleFavorite(session.id, user.id);
-    setIsFavorited(newFavStatus);
-    onFavoriteChange?.();
-    
-    toast({
-      title: newFavStatus ? "Added to Favorites" : "Removed from Favorites",
-      description: `"${session.title}" has been ${newFavStatus ? 'added to' : 'removed from'} your favorites.`
-    });
+    try {
+      const newFavStatus = await favoritesService.toggleFavorite(user.id, session.id);
+      setIsFavorited(newFavStatus);
+      onFavoriteChange?.();
+      
+      toast({
+        title: newFavStatus ? "Added to Favorites" : "Removed from Favorites",
+        description: `"${session.title}" has been ${newFavStatus ? 'added to' : 'removed from'} your favorites.`
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to update favorite status"
+      });
+    }
   };
 
-  const handleMarkComplete = () => {
+  const handleMarkComplete = async () => {
     if (!user) return;
     
-    completionService.markSessionComplete(session.id, user.id, session.duration);
-    setIsCompleted(true);
-    
-    toast({
-      title: "Session Completed!",
-      description: `Great job completing "${session.title}"! You practiced for ${session.duration} minutes.`
-    });
+    try {
+      await completionService.markSessionCompleted(user.id, session.id, session.duration);
+      setIsCompleted(true);
+      
+      toast({
+        title: "Session Completed!",
+        description: `Great job completing "${session.title}"! You practiced for ${session.duration} minutes.`
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to mark session as completed"
+      });
+    }
   };
 
   const handleCardClick = (e: React.MouseEvent) => {

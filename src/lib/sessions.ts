@@ -1,206 +1,304 @@
+import { supabase } from '@/integrations/supabase/client';
+
 export interface WellnessSession {
   id: string;
   title: string;
   description: string;
-  type: 'meditation' | 'yoga' | 'mindfulness' | 'breathing';
+  type: string;
   duration: number; // in minutes
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
-  instructor?: string;
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
   videoUrl?: string;
-  videoType?: 'youtube' | 'custom';
-  customVideoFile?: File | string; // File for new uploads, string URL for stored videos
-  isPublic: boolean;
-  createdBy: string;
+  videoType: 'youtube' | 'custom';
+  customVideoFile?: string;
   createdAt: string;
+  userId?: string;
+  isPublic?: boolean;
 }
 
-const SESSIONS_STORAGE_KEY = 'wellness_sessions';
-const PUBLIC_SESSIONS_STORAGE_KEY = 'wellness_public_sessions';
-
-// Mock public sessions available to everyone
+// Default public sessions available to everyone
 const DEFAULT_PUBLIC_SESSIONS: WellnessSession[] = [
   {
     id: '1',
-    title: 'Morning Mindfulness',
-    description: 'Start your day with peaceful awareness and gentle breathing exercises.',
-    type: 'mindfulness',
+    title: 'Morning Meditation',
+    description: 'Start your day with peaceful mindfulness',
+    type: 'Meditation',
     duration: 10,
-    difficulty: 'beginner',
-    instructor: 'Sarah Chen',
-    videoUrl: 'https://www.youtube.com/watch?v=HNab2YqCCiM',
+    difficulty: 'Beginner',
+    videoUrl: 'https://www.youtube.com/watch?v=inpok4MKVLM',
     videoType: 'youtube',
     isPublic: true,
-    createdBy: 'system',
     createdAt: new Date().toISOString()
   },
   {
     id: '2',
-    title: 'Deep Breathing for Stress Relief',
-    description: 'Calm your mind and reduce stress with guided breathing techniques.',
-    type: 'breathing',
-    duration: 15,
-    difficulty: 'beginner',
-    instructor: 'Marcus Thompson',
-    videoUrl: 'https://www.youtube.com/watch?v=oN8xV3Kb5-Q',
+    title: 'Stress Relief Breathing',
+    description: 'Quick breathing exercises for stress relief',
+    type: 'Breathing',
+    duration: 5,
+    difficulty: 'Beginner',
+    videoUrl: 'https://www.youtube.com/watch?v=tybOi4hjZFQ',
     videoType: 'youtube',
     isPublic: true,
-    createdBy: 'system',
     createdAt: new Date().toISOString()
   },
   {
     id: '3',
-    title: 'Gentle Yoga Flow',
-    description: 'A soothing yoga sequence perfect for relaxation and flexibility.',
-    type: 'yoga',
-    duration: 30,
-    difficulty: 'intermediate',
-    instructor: 'Lila Patel',
-    videoUrl: 'https://www.youtube.com/watch?v=Vr3h5X9kmUo',
+    title: 'Evening Relaxation',
+    description: 'Unwind with this calming evening routine',
+    type: 'Relaxation',
+    duration: 15,
+    difficulty: 'Intermediate',
+    videoUrl: 'https://www.youtube.com/watch?v=1ZYbU82GVz4',
     videoType: 'youtube',
     isPublic: true,
-    createdBy: 'system',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: '4',
-    title: 'Evening Meditation',
-    description: 'Wind down with this calming meditation to prepare for restful sleep.',
-    type: 'meditation',
-    duration: 20,
-    difficulty: 'beginner',
-    instructor: 'David Kim',
-    videoUrl: 'https://www.youtube.com/watch?v=uqtIqCKjkuc',
-    videoType: 'youtube',
-    isPublic: true,
-    createdBy: 'system',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: '5',
-    title: 'Advanced Mindful Walking',
-    description: 'Combine movement with mindfulness in this walking meditation practice.',
-    type: 'mindfulness',
-    duration: 25,
-    difficulty: 'advanced',
-    instructor: 'Emma Rodriguez',
-    isPublic: true,
-    createdBy: 'system',
     createdAt: new Date().toISOString()
   }
 ];
 
-// Mock user sessions (pre-populated for first-time users)
-const DEFAULT_USER_SESSIONS: WellnessSession[] = [
+// Default user sessions for new users
+const DEFAULT_USER_SESSIONS = [
   {
-    id: 'user-1',
-    title: 'My Personal Breathing Practice',
-    description: 'A customized breathing exercise I created for daily stress management.',
-    type: 'breathing',
-    duration: 12,
-    difficulty: 'beginner',
-    videoType: 'youtube',
-    isPublic: false,
-    createdBy: 'user',
-    createdAt: new Date(Date.now() - 86400000).toISOString() // 1 day ago
+    title: 'My First Meditation',
+    description: 'A gentle introduction to meditation practice',
+    type: 'Meditation',
+    duration: 8,
+    difficulty: 'Beginner' as const,
+    videoType: 'youtube' as const,
+    isPublic: false
   },
   {
-    id: 'user-2',
-    title: 'Quick Mindfulness Check-in',
-    description: 'A brief mindfulness session for busy days when I need to center myself.',
-    type: 'mindfulness',
-    duration: 5,
-    difficulty: 'beginner',
-    videoType: 'youtube',
-    isPublic: false,
-    createdBy: 'user',
-    createdAt: new Date(Date.now() - 172800000).toISOString() // 2 days ago
+    title: 'Quick Stress Relief',
+    description: 'A brief session for busy moments',
+    type: 'Breathing',
+    duration: 3,
+    difficulty: 'Beginner' as const,
+    videoType: 'youtube' as const,
+    isPublic: false
   }
 ];
 
 export const sessionsService = {
-  getPublicSessions(): WellnessSession[] {
+  async getPublicSessions(): Promise<WellnessSession[]> {
     try {
-      const stored = localStorage.getItem(PUBLIC_SESSIONS_STORAGE_KEY);
-      if (stored) {
-        return JSON.parse(stored);
+      const { data, error } = await supabase
+        .from('sessions')
+        .select('*')
+        .eq('is_public', true)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching public sessions:', error);
+        return DEFAULT_PUBLIC_SESSIONS;
       }
-    } catch (error) {
-      console.error('Error parsing public sessions:', error);
-    }
-    
-    // Initialize with default sessions
-    localStorage.setItem(PUBLIC_SESSIONS_STORAGE_KEY, JSON.stringify(DEFAULT_PUBLIC_SESSIONS));
-    return DEFAULT_PUBLIC_SESSIONS;
-  },
 
-  getUserSessions(userId: string): WellnessSession[] {
-    try {
-      const stored = localStorage.getItem(SESSIONS_STORAGE_KEY);
-      if (stored) {
-        const allSessions = JSON.parse(stored);
-        return allSessions.filter((session: WellnessSession) => session.createdBy === userId);
+      // If no public sessions in DB, return defaults
+      if (!data || data.length === 0) {
+        return DEFAULT_PUBLIC_SESSIONS;
       }
+
+      return data.map(session => ({
+        id: session.id,
+        title: session.title,
+        description: session.description || '',
+        type: session.type,
+        duration: session.duration,
+        difficulty: session.difficulty as 'Beginner' | 'Intermediate' | 'Advanced',
+        videoUrl: session.video_url || '',
+        videoType: session.video_type as 'youtube' | 'custom',
+        customVideoFile: session.custom_video_file || '',
+        createdAt: session.created_at,
+        userId: session.user_id,
+        isPublic: session.is_public
+      }));
     } catch (error) {
-      console.error('Error parsing user sessions:', error);
+      console.error('Error in getPublicSessions:', error);
+      return DEFAULT_PUBLIC_SESSIONS;
     }
-    
-    // Initialize with default user sessions for first-time users
-    const userSessions = DEFAULT_USER_SESSIONS.map(session => ({
-      ...session,
-      createdBy: userId
-    }));
-    
-    this.saveSessions(userSessions);
-    return userSessions;
   },
 
-  createSession(session: Omit<WellnessSession, 'id' | 'createdAt'>): WellnessSession {
-    const newSession: WellnessSession = {
-      ...session,
-      id: Math.random().toString(36).substr(2, 9),
-      createdAt: new Date().toISOString()
-    };
-
-    const existingSessions = this.getAllSessions();
-    existingSessions.push(newSession);
-    this.saveSessions(existingSessions);
-
-    return newSession;
-  },
-
-  updateSession(sessionId: string, updates: Partial<WellnessSession>): WellnessSession | null {
-    const sessions = this.getAllSessions();
-    const sessionIndex = sessions.findIndex(s => s.id === sessionId);
-    
-    if (sessionIndex === -1) return null;
-
-    sessions[sessionIndex] = { ...sessions[sessionIndex], ...updates };
-    this.saveSessions(sessions);
-    
-    return sessions[sessionIndex];
-  },
-
-  deleteSession(sessionId: string): boolean {
-    const sessions = this.getAllSessions();
-    const filteredSessions = sessions.filter(s => s.id !== sessionId);
-    
-    if (filteredSessions.length === sessions.length) return false;
-    
-    this.saveSessions(filteredSessions);
-    return true;
-  },
-
-  getAllSessions(): WellnessSession[] {
+  async getUserSessions(userId: string): Promise<WellnessSession[]> {
     try {
-      const stored = localStorage.getItem(SESSIONS_STORAGE_KEY);
-      return stored ? JSON.parse(stored) : [];
+      const { data, error } = await supabase
+        .from('sessions')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching user sessions:', error);
+        return [];
+      }
+
+      if (!data || data.length === 0) {
+        // Create default sessions for new users
+        const defaultSessions = await Promise.all(
+          DEFAULT_USER_SESSIONS.map(session => 
+            this.createSession({
+              ...session,
+              userId,
+              isPublic: false
+            })
+          )
+        );
+        return defaultSessions;
+      }
+
+      return data.map(session => ({
+        id: session.id,
+        title: session.title,
+        description: session.description || '',
+        type: session.type,
+        duration: session.duration,
+        difficulty: session.difficulty as 'Beginner' | 'Intermediate' | 'Advanced',
+        videoUrl: session.video_url || '',
+        videoType: session.video_type as 'youtube' | 'custom',
+        customVideoFile: session.custom_video_file || '',
+        createdAt: session.created_at,
+        userId: session.user_id,
+        isPublic: session.is_public
+      }));
     } catch (error) {
-      console.error('Error parsing sessions:', error);
+      console.error('Error in getUserSessions:', error);
       return [];
     }
   },
 
-  saveSessions(sessions: WellnessSession[]): void {
-    localStorage.setItem(SESSIONS_STORAGE_KEY, JSON.stringify(sessions));
+  async createSession(session: Omit<WellnessSession, 'id' | 'createdAt'>): Promise<WellnessSession> {
+    try {
+      const { data, error } = await supabase
+        .from('sessions')
+        .insert({
+          user_id: session.userId!,
+          title: session.title,
+          description: session.description,
+          type: session.type,
+          duration: session.duration,
+          difficulty: session.difficulty,
+          video_url: session.videoUrl,
+          video_type: session.videoType,
+          custom_video_file: session.customVideoFile,
+          is_public: session.isPublic || false
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating session:', error);
+        throw new Error('Failed to create session');
+      }
+
+      return {
+        id: data.id,
+        title: data.title,
+        description: data.description || '',
+        type: data.type,
+        duration: data.duration,
+        difficulty: data.difficulty as 'Beginner' | 'Intermediate' | 'Advanced',
+        videoUrl: data.video_url || '',
+        videoType: data.video_type as 'youtube' | 'custom',
+        customVideoFile: data.custom_video_file || '',
+        createdAt: data.created_at,
+        userId: data.user_id,
+        isPublic: data.is_public
+      };
+    } catch (error) {
+      console.error('Error in createSession:', error);
+      throw error;
+    }
+  },
+
+  async updateSession(sessionId: string, updates: Partial<WellnessSession>): Promise<WellnessSession | null> {
+    try {
+      const { data, error } = await supabase
+        .from('sessions')
+        .update({
+          title: updates.title,
+          description: updates.description,
+          type: updates.type,
+          duration: updates.duration,
+          difficulty: updates.difficulty,
+          video_url: updates.videoUrl,
+          video_type: updates.videoType,
+          custom_video_file: updates.customVideoFile,
+          is_public: updates.isPublic
+        })
+        .eq('id', sessionId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating session:', error);
+        return null;
+      }
+
+      return {
+        id: data.id,
+        title: data.title,
+        description: data.description || '',
+        type: data.type,
+        duration: data.duration,
+        difficulty: data.difficulty as 'Beginner' | 'Intermediate' | 'Advanced',
+        videoUrl: data.video_url || '',
+        videoType: data.video_type as 'youtube' | 'custom',
+        customVideoFile: data.custom_video_file || '',
+        createdAt: data.created_at,
+        userId: data.user_id,
+        isPublic: data.is_public
+      };
+    } catch (error) {
+      console.error('Error in updateSession:', error);
+      return null;
+    }
+  },
+
+  async deleteSession(sessionId: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('sessions')
+        .delete()
+        .eq('id', sessionId);
+
+      if (error) {
+        console.error('Error deleting session:', error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error in deleteSession:', error);
+      return false;
+    }
+  },
+
+  async getAllSessions(): Promise<WellnessSession[]> {
+    try {
+      const { data, error } = await supabase
+        .from('sessions')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching all sessions:', error);
+        return [];
+      }
+
+      return data.map(session => ({
+        id: session.id,
+        title: session.title,
+        description: session.description || '',
+        type: session.type,
+        duration: session.duration,
+        difficulty: session.difficulty as 'Beginner' | 'Intermediate' | 'Advanced',
+        videoUrl: session.video_url || '',
+        videoType: session.video_type as 'youtube' | 'custom',
+        customVideoFile: session.custom_video_file || '',
+        createdAt: session.created_at,
+        userId: session.user_id,
+        isPublic: session.is_public
+      }));
+    } catch (error) {
+      console.error('Error in getAllSessions:', error);
+      return [];
+    }
   }
 };

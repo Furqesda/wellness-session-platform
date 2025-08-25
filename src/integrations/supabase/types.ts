@@ -14,7 +14,145 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      favorites: {
+        Row: {
+          created_at: string
+          id: string
+          session_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          session_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          session_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorites_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_type: string | null
+          avatar_value: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_type?: string | null
+          avatar_value?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_type?: string | null
+          avatar_value?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      progress: {
+        Row: {
+          completed_at: string
+          duration_minutes: number
+          id: string
+          session_id: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          duration_minutes?: number
+          id?: string
+          session_id: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          duration_minutes?: number
+          id?: string
+          session_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "progress_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sessions: {
+        Row: {
+          created_at: string
+          custom_video_file: string | null
+          description: string | null
+          difficulty: string
+          duration: number
+          id: string
+          is_public: boolean
+          title: string
+          type: string
+          updated_at: string
+          user_id: string
+          video_type: string | null
+          video_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          custom_video_file?: string | null
+          description?: string | null
+          difficulty: string
+          duration: number
+          id?: string
+          is_public?: boolean
+          title: string
+          type: string
+          updated_at?: string
+          user_id: string
+          video_type?: string | null
+          video_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          custom_video_file?: string | null
+          description?: string | null
+          difficulty?: string
+          duration?: number
+          id?: string
+          is_public?: boolean
+          title?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+          video_type?: string | null
+          video_url?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
