@@ -28,7 +28,11 @@ export const VideoModal: React.FC<VideoModalProps> = ({ session, isOpen, onClose
 
   useEffect(() => {
     if (user && session) {
-      setIsCompleted(completionService.isSessionCompletedToday(session.id, user.id));
+      const checkCompleted = async () => {
+        const completed = await completionService.isSessionCompleted(user.id, session.id);
+        setIsCompleted(completed);
+      };
+      checkCompleted();
     }
   }, [session, user]);
 
@@ -57,11 +61,11 @@ export const VideoModal: React.FC<VideoModalProps> = ({ session, isOpen, onClose
     setElapsedTime(0);
   };
 
-  const handleStopSession = () => {
+  const handleStopSession = async () => {
     if (!user || !session || elapsedTime === 0) return;
     
     const elapsedMinutes = Math.ceil(elapsedTime / 60); // Round up to nearest minute
-    completionService.markSessionComplete(session.id, user.id, elapsedMinutes);
+    await completionService.markSessionCompleted(user.id, session.id, elapsedMinutes);
     setIsCompleted(true);
     setIsSessionActive(false);
     setIsPlaying(false);
@@ -72,11 +76,11 @@ export const VideoModal: React.FC<VideoModalProps> = ({ session, isOpen, onClose
     });
   };
 
-  const handleMarkComplete = () => {
+  const handleMarkComplete = async () => {
     if (!user || !session) return;
     
     const elapsedMinutes = elapsedTime > 0 ? Math.ceil(elapsedTime / 60) : session.duration;
-    completionService.markSessionComplete(session.id, user.id, elapsedMinutes);
+    await completionService.markSessionCompleted(user.id, session.id, elapsedMinutes);
     setIsCompleted(true);
     
     toast({
@@ -228,7 +232,6 @@ export const VideoModal: React.FC<VideoModalProps> = ({ session, isOpen, onClose
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4 text-xs text-muted-foreground">
                 <span>{session.duration} minutes</span>
-                {session.instructor && <span>Instructor: {session.instructor}</span>}
                 <span className="capitalize">{session.difficulty}</span>
               </div>
             </div>

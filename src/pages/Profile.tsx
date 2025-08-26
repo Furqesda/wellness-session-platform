@@ -19,6 +19,7 @@ const Profile = () => {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [stats, setStats] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Redirect if not authenticated
@@ -30,25 +31,29 @@ const Profile = () => {
 
   useEffect(() => {
     if (user) {
-      // Initialize taken emojis on first load
-      profileService.initializeTakenEmojis();
       loadProfile();
     }
   }, [user]);
 
-  const loadProfile = () => {
+  const loadProfile = async () => {
     if (!user) return;
     
-    let userProfile = profileService.getUserProfile(user.id);
-    if (!userProfile) {
-      // Create profile if it doesn't exist
-      const userSessions = sessionsService.getUserSessions(user.id);
-      userProfile = profileService.createOrUpdateProfile(user.id, {
-        displayName: user.name,
-        totalSessionsCreated: userSessions.length
-      });
+    try {
+      let userProfile = await profileService.getUserProfile(user.id);
+      if (!userProfile) {
+        // Create profile if it doesn't exist
+        userProfile = await profileService.createOrUpdateProfile(user.id, {
+          displayName: user.email?.split('@')[0] || 'User'
+        });
+      }
+      setProfile(userProfile);
+
+      // Load stats
+      const userStats = await profileService.getUserStats(user.id);
+      setStats(userStats);
+    } catch (error) {
+      console.error('Error loading profile:', error);
     }
-    setProfile(userProfile);
   };
 
   const handleProfileUpdate = (updatedProfile: UserProfile) => {
@@ -56,17 +61,17 @@ const Profile = () => {
   };
 
   const renderAvatar = () => {
-    if (profile?.emojiAvatar) {
+    if (profile?.avatarType === 'emoji' && profile.avatarValue) {
       return (
         <div className="wellness-gradient p-4 rounded-2xl w-fit mx-auto mb-6 text-4xl">
-          {profile.emojiAvatar}
+          {profile.avatarValue}
         </div>
       );
-    } else if (profile?.profilePicture) {
+    } else if (profile?.avatarType === 'image' && profile.avatarValue) {
       return (
         <div className="w-20 h-20 rounded-2xl overflow-hidden mx-auto mb-6 border-4 border-primary/20">
           <img
-            src={profile.profilePicture}
+            src={profile.avatarValue}
             alt="Profile"
             className="w-full h-full object-cover"
           />
@@ -81,56 +86,52 @@ const Profile = () => {
     }
   };
 
-  if (!isAuthenticated || !user || !profile) {
+  if (!isAuthenticated || !user || !profile || !stats) {
     return null;
   }
 
-  const progress = completionService.getUserProgress(user.id);
-  const favoriteCount = favoritesService.getFavoritesByUser(user.id).length;
-  const userSessions = sessionsService.getUserSessions(user.id);
-
   // Calculate progress percentages for visual representation
-  const maxSessions = Math.max(userSessions.length, 10);
-  const maxCompletedSessions = Math.max(progress.totalCompletedSessions, 10);
-  const maxMinutes = Math.max(progress.totalMinutesPracticed, 60);
-  const maxFavorites = Math.max(favoriteCount, 5);
+  const maxSessions = Math.max(stats.sessionsCreated, 10);
+  const maxCompletedSessions = Math.max(stats.completedSessions, 10);
+  const maxMinutes = Math.max(stats.minutesPracticed, 60);
+  const maxFavorites = Math.max(stats.favoriteSessions, 5);
 
   const statsCards = [
     {
       title: 'Sessions Created',
-      value: userSessions.length,
+      value: stats.sessionsCreated,
       icon: BookOpen,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50 dark:bg-blue-900/20',
-      progress: Math.min((userSessions.length / maxSessions) * 100, 100),
-      description: `${userSessions.length} wellness sessions shared`
+      progress: Math.min((stats.sessionsCreated / maxSessions) * 100, 100),
+      description: `${stats.sessionsCreated} wellness sessions shared`
     },
     {
       title: 'Completed Sessions',
-      value: progress.totalCompletedSessions,
+      value: stats.completedSessions,
       icon: Trophy,
       color: 'text-green-600',
       bgColor: 'bg-green-50 dark:bg-green-900/20',
-      progress: Math.min((progress.totalCompletedSessions / maxCompletedSessions) * 100, 100),
-      description: `${progress.totalCompletedSessions} sessions completed`
+      progress: Math.min((stats.completedSessions / maxCompletedSessions) * 100, 100),
+      description: `${stats.completedSessions} sessions completed`
     },
     {
       title: 'Minutes Practiced',
-      value: progress.totalMinutesPracticed,
+      value: stats.minutesPracticed,
       icon: Calendar,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50 dark:bg-purple-900/20',
-      progress: Math.min((progress.totalMinutesPracticed / maxMinutes) * 100, 100),
-      description: `${Math.floor(progress.totalMinutesPracticed / 60)}h ${progress.totalMinutesPracticed % 60}m total`
+      progress: Math.min((stats.minutesPracticed / maxMinutes) * 100, 100),
+      description: `${Math.floor(stats.minutesPracticed / 60)}h ${stats.minutesPracticed % 60}m total`
     },
     {
       title: 'Favorite Sessions',
-      value: favoriteCount,
+      value: stats.favoriteSessions,
       icon: Heart,
       color: 'text-red-600',
       bgColor: 'bg-red-50 dark:bg-red-900/20',
-      progress: Math.min((favoriteCount / maxFavorites) * 100, 100),
-      description: `${favoriteCount} sessions in favorites`
+      progress: Math.min((stats.favoriteSessions / maxFavorites) * 100, 100),
+      description: `${stats.favoriteSessions} sessions in favorites`
     }
   ];
 
@@ -154,12 +155,12 @@ const Profile = () => {
             </Button>
           </div>
           <p className="text-xl text-muted-foreground">
-            Member since {new Date(profile.dateJoined).toLocaleDateString()}
+            Member since {new Date(profile.createdAt).toLocaleDateString()}
           </p>
         </div>
 
         {/* Motivational Message */}
-        {progress.totalCompletedSessions === 0 && (
+        {stats.completedSessions === 0 && (
           <Card className="card-gradient border-border/50 mb-8 text-center">
             <CardContent className="pt-6">
               <div className="wellness-gradient p-3 rounded-xl w-fit mx-auto mb-4">
@@ -237,7 +238,7 @@ const Profile = () => {
               <div>
                 <Label className="text-sm font-medium text-muted-foreground">Date Joined</Label>
                 <p className="text-lg font-semibold text-foreground">
-                  {new Date(profile.dateJoined).toLocaleDateString('en-US', {
+                  {new Date(profile.createdAt).toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric'

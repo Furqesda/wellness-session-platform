@@ -25,11 +25,15 @@ const MyFavorites = () => {
     }
   }, [user]);
 
-  const loadFavorites = () => {
+  const loadFavorites = async () => {
     if (!user) return;
     
-    const favoriteIds = favoritesService.getFavoritesByUser(user.id);
-    const allSessions = [...sessionsService.getPublicSessions(), ...sessionsService.getUserSessions(user.id)];
+    const favoriteIds = await favoritesService.getFavorites(user.id);
+    const [publicSessions, userSessions] = await Promise.all([
+      sessionsService.getPublicSessions(),
+      sessionsService.getUserSessions(user.id)
+    ]);
+    const allSessions = [...publicSessions, ...userSessions];
     const favorites = allSessions.filter(session => favoriteIds.includes(session.id));
     setFavoriteSessions(favorites);
   };

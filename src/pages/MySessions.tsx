@@ -18,7 +18,7 @@ const MySessions = () => {
   const [sessions, setSessions] = useState<WellnessSession[]>([]);
   const [editingSession, setEditingSession] = useState<WellnessSession | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [userProgress, setUserProgress] = useState(completionService.getUserProgress(''));
+  const [userProgress, setUserProgress] = useState(null);
 
   // Redirect if not authenticated
   React.useEffect(() => {
@@ -29,9 +29,13 @@ const MySessions = () => {
 
   useEffect(() => {
     if (user) {
-      const userSessions = sessionsService.getUserSessions(user.id);
-      setSessions(userSessions);
-      setUserProgress(completionService.getUserProgress(user.id));
+      const loadData = async () => {
+        const userSessions = await sessionsService.getUserSessions(user.id);
+        setSessions(userSessions);
+        const progress = await completionService.getUserProgress(user.id);
+        setUserProgress(progress);
+      };
+      loadData();
     }
   }, [user]);
 
@@ -40,15 +44,15 @@ const MySessions = () => {
     setShowEditModal(true);
   };
 
-  const handleDelete = (sessionId: string) => {
-    const success = sessionsService.deleteSession(sessionId);
-    if (success) {
+  const handleDelete = async (sessionId: string) => {
+    try {
+      await sessionsService.deleteSession(sessionId);
       setSessions(prev => prev.filter(s => s.id !== sessionId));
       toast({
         title: "Session Deleted",
         description: "Your session has been successfully deleted."
       });
-    } else {
+    } catch (error) {
       toast({
         variant: "destructive",
         title: "Error",
@@ -61,18 +65,16 @@ const MySessions = () => {
     if (!editingSession || !user) return;
 
     try {
-      const updatedSession = sessionsService.updateSession(editingSession.id, sessionData);
-      if (updatedSession) {
-        setSessions(prev => 
-          prev.map(s => s.id === editingSession.id ? updatedSession : s)
-        );
-        toast({
-          title: "Session Updated!",
-          description: `Your session "${updatedSession.title}" has been updated successfully.`
-        });
-        setShowEditModal(false);
-        setEditingSession(null);
-      }
+      const updatedSession = await sessionsService.updateSession(editingSession.id, sessionData);
+      setSessions(prev => 
+        prev.map(s => s.id === editingSession.id ? updatedSession : s)
+      );
+      toast({
+        title: "Session Updated!",
+        description: `Your session "${updatedSession.title}" has been updated successfully.`
+      });
+      setShowEditModal(false);
+      setEditingSession(null);
     } catch (error) {
       toast({
         variant: "destructive",
@@ -109,7 +111,7 @@ const MySessions = () => {
         </div>
 
         {/* Progress Stats */}
-        <ProgressStats progress={userProgress} />
+        {userProgress && <ProgressStats progress={userProgress} />}
 
         {/* Sessions Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">

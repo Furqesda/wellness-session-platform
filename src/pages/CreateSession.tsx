@@ -23,9 +23,9 @@ const CreateSession = () => {
     if (!user) return;
 
     try {
-      const newSession = sessionsService.createSession({
+      const newSession = await sessionsService.createSession({
         ...sessionData,
-        createdBy: user.id
+        userId: user.id
       });
 
       toast({

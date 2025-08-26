@@ -37,11 +37,11 @@ const getSessionIcon = (type: WellnessSession['type']) => {
 
 const getDifficultyColor = (difficulty: WellnessSession['difficulty']) => {
   switch (difficulty) {
-    case 'beginner':
+    case 'Beginner':
       return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-    case 'intermediate':
+    case 'Intermediate':
       return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
-    case 'advanced':
+    case 'Advanced':
       return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
     default:
       return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
@@ -147,14 +147,14 @@ export const SessionCard: React.FC<SessionCardProps> = ({
               <h3 className="font-semibold text-lg text-foreground group-hover:text-primary wellness-transition">
                 {session.title}
               </h3>
-              <div className="flex items-center space-x-2 mt-1">
-                <Badge className={getDifficultyColor(session.difficulty)}>
-                  {session.difficulty}
-                </Badge>
-                <Badge variant="outline" className="text-xs">
-                  {session.type}
-                </Badge>
-              </div>
+            <div className="flex items-center space-x-2 mt-1">
+              <Badge className={getDifficultyColor(session.difficulty)}>
+                {session.difficulty}
+              </Badge>
+              <Badge variant="outline" className="text-xs">
+                {session.type}
+              </Badge>
+            </div>
             </div>
           </div>
           
@@ -185,12 +185,6 @@ export const SessionCard: React.FC<SessionCardProps> = ({
               <Clock className="h-4 w-4" />
               <span>{session.duration} min</span>
             </div>
-            {session.instructor && (
-              <div className="flex items-center space-x-1">
-                <User className="h-4 w-4" />
-                <span>{session.instructor}</span>
-              </div>
-            )}
           </div>
         </div>
 

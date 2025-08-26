@@ -13,9 +13,12 @@ const BrowseSessions = () => {
   const [difficultyFilter, setDifficultyFilter] = useState<string>('all');
 
   useEffect(() => {
-    const publicSessions = sessionsService.getPublicSessions();
-    setSessions(publicSessions);
-    setFilteredSessions(publicSessions);
+    const loadSessions = async () => {
+      const publicSessions = await sessionsService.getPublicSessions();
+      setSessions(publicSessions);
+      setFilteredSessions(publicSessions);
+    };
+    loadSessions();
   }, []);
 
   useEffect(() => {
@@ -25,8 +28,7 @@ const BrowseSessions = () => {
     if (searchTerm) {
       filtered = filtered.filter(session =>
         session.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        session.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        session.instructor?.toLowerCase().includes(searchTerm.toLowerCase())
+        session.description.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -94,9 +96,9 @@ const BrowseSessions = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Levels</SelectItem>
-                <SelectItem value="beginner">Beginner</SelectItem>
-                <SelectItem value="intermediate">Intermediate</SelectItem>
-                <SelectItem value="advanced">Advanced</SelectItem>
+                <SelectItem value="Beginner">Beginner</SelectItem>
+                <SelectItem value="Intermediate">Intermediate</SelectItem>
+                <SelectItem value="Advanced">Advanced</SelectItem>
               </SelectContent>
             </Select>
           </div>

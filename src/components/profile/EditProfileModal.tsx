@@ -28,19 +28,20 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [displayName, setDisplayName] = useState(profile.displayName);
-  const [avatarType, setAvatarType] = useState<'emoji' | 'custom'>(
-    profile.emojiAvatar ? 'emoji' : 'custom'
+  const [avatarType, setAvatarType] = useState<'emoji' | 'image'>(profile.avatarType);
+  const [selectedEmoji, setSelectedEmoji] = useState(
+    profile.avatarType === 'emoji' ? profile.avatarValue : ''
   );
-  const [selectedEmoji, setSelectedEmoji] = useState(profile.emojiAvatar || '');
   const [customImage, setCustomImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState(profile.profilePicture || '');
+  const [imagePreview, setImagePreview] = useState(
+    profile.avatarType === 'image' ? profile.avatarValue : ''
+  );
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
-  const availableEmojis = profileService.getAvailableEmojis();
   // Add current user's emoji back to available list if they have one
-  const currentUserEmojis = profile.emojiAvatar && !availableEmojis.includes(profile.emojiAvatar) 
-    ? [profile.emojiAvatar, ...availableEmojis] 
-    : availableEmojis;
+  const currentUserEmojis = profile.avatarType === 'emoji' && profile.avatarValue && !AVAILABLE_EMOJIS.includes(profile.avatarValue)
+    ? [profile.avatarValue, ...AVAILABLE_EMOJIS] 
+    : AVAILABLE_EMOJIS;
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -65,22 +66,28 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
     }
   };
 
-  const validateForm = (): boolean => {
+  const validateForm = async (): Promise<boolean> => {
     const newErrors: { [key: string]: string } = {};
 
     // Validate display name
     if (!displayName.trim()) {
       newErrors.displayName = 'Display name is required';
-    } else if (profileService.isDisplayNameTaken(displayName.trim(), profile.userId)) {
-      newErrors.displayName = 'This display name is already in use. Please choose a different one.';
+    } else {
+      const isTaken = await profileService.isDisplayNameTaken(displayName.trim(), profile.id);
+      if (isTaken) {
+        newErrors.displayName = 'This display name is already in use. Please choose a different one.';
+      }
     }
 
     // Validate avatar selection
     if (avatarType === 'emoji') {
       if (!selectedEmoji) {
         newErrors.avatar = 'Please select an emoji avatar';
-      } else if (selectedEmoji !== profile.emojiAvatar && profileService.isEmojiTaken(selectedEmoji)) {
-        newErrors.avatar = 'This emoji is already taken by another user';
+      } else if (selectedEmoji !== profile.avatarValue) {
+        const isTaken = await profileService.isEmojiTaken(selectedEmoji, profile.id);
+        if (isTaken) {
+          newErrors.avatar = 'This emoji is already taken by another user';
+        }
       }
     } else {
       if (!customImage && !imagePreview) {
@@ -93,47 +100,16 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   };
 
   const handleSave = async () => {
-    if (!validateForm()) return;
+    if (!(await validateForm())) return;
 
     try {
-      let updatedProfile: UserProfile = {
-        ...profile,
-        displayName: displayName.trim()
+      const profileData = {
+        displayName: displayName.trim(),
+        avatarType: avatarType,
+        avatarValue: avatarType === 'emoji' ? selectedEmoji : imagePreview
       };
 
-      if (avatarType === 'emoji') {
-        const success = profileService.updateEmojiAvatar(profile.userId, selectedEmoji);
-        if (!success) {
-          toast({
-            variant: "destructive",
-            title: "Error",
-            description: "Selected emoji is no longer available. Please choose another."
-          });
-          return;
-        }
-        updatedProfile = {
-          ...updatedProfile,
-          emojiAvatar: selectedEmoji,
-          profilePicture: undefined
-        };
-      } else {
-        if (customImage) {
-          // In a real app, you'd upload to a server. Here we'll use a data URL
-          updatedProfile = {
-            ...updatedProfile,
-            profilePicture: imagePreview,
-            emojiAvatar: undefined
-          };
-        }
-        
-        // Release old emoji if switching from emoji to custom
-        if (profile.emojiAvatar) {
-          profileService.releaseEmoji(profile.emojiAvatar);
-        }
-        
-        profileService.createOrUpdateProfile(profile.userId, updatedProfile);
-      }
-
+      const updatedProfile = await profileService.createOrUpdateProfile(profile.id, profileData);
       onProfileUpdate(updatedProfile);
       onClose();
       
@@ -152,9 +128,9 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
   const handleClose = () => {
     setDisplayName(profile.displayName);
-    setAvatarType(profile.emojiAvatar ? 'emoji' : 'custom');
-    setSelectedEmoji(profile.emojiAvatar || '');
-    setImagePreview(profile.profilePicture || '');
+    setAvatarType(profile.avatarType);
+    setSelectedEmoji(profile.avatarType === 'emoji' ? profile.avatarValue : '');
+    setImagePreview(profile.avatarType === 'image' ? profile.avatarValue : '');
     setCustomImage(null);
     setErrors({});
     onClose();
@@ -190,7 +166,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
             {/* Avatar Selection */}
             <div className="space-y-4">
               <Label>Profile Avatar</Label>
-              <RadioGroup value={avatarType} onValueChange={(value: 'emoji' | 'custom') => setAvatarType(value)}>
+              <RadioGroup value={avatarType} onValueChange={(value: 'emoji' | 'image') => setAvatarType(value)}>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="emoji" id="emoji" />
                   <Label htmlFor="emoji" className="flex items-center gap-2 cursor-pointer">
@@ -199,8 +175,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="custom" id="custom" />
-                  <Label htmlFor="custom" className="flex items-center gap-2 cursor-pointer">
+                  <RadioGroupItem value="image" id="image" />
+                  <Label htmlFor="image" className="flex items-center gap-2 cursor-pointer">
                     <Upload className="h-4 w-4" />
                     Upload Custom Picture
                   </Label>
@@ -259,7 +235,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
             )}
 
             {/* Custom Image Upload */}
-            {avatarType === 'custom' && (
+            {avatarType === 'image' && (
               <Card>
                 <CardContent className="pt-6">
                   <div className="space-y-4">

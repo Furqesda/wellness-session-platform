@@ -27,13 +27,11 @@ export const CreateSessionForm: React.FC<CreateSessionFormProps> = ({
     description: initialData?.description || '',
     type: initialData?.type || 'meditation',
     duration: initialData?.duration || 10,
-    difficulty: initialData?.difficulty || 'beginner',
-    instructor: initialData?.instructor || '',
+    difficulty: initialData?.difficulty || 'Beginner',
     isPublic: initialData?.isPublic || false,
-    createdBy: initialData?.createdBy || '',
     videoType: initialData?.videoType || 'youtube',
     videoUrl: initialData?.videoUrl || '',
-    customVideoFile: initialData?.customVideoFile || null
+    customVideoFile: initialData?.customVideoFile || ''
   });
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
 
@@ -57,7 +55,7 @@ export const CreateSessionForm: React.FC<CreateSessionFormProps> = ({
     if (file) {
       const videoUrl = URL.createObjectURL(file);
       setVideoPreview(videoUrl);
-      setFormData(prev => ({ ...prev, customVideoFile: file }));
+      setFormData(prev => ({ ...prev, customVideoFile: videoUrl }));
     }
   };
 
@@ -96,16 +94,6 @@ export const CreateSessionForm: React.FC<CreateSessionFormProps> = ({
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="instructor">Instructor (Optional)</Label>
-              <Input
-                id="instructor"
-                placeholder="Your name or instructor name"
-                value={formData.instructor}
-                onChange={(e) => handleInputChange('instructor', e.target.value)}
-                className="border-border/50 focus:border-primary"
-              />
-            </div>
           </div>
 
           <div className="space-y-2">
@@ -150,9 +138,9 @@ export const CreateSessionForm: React.FC<CreateSessionFormProps> = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="beginner">Beginner</SelectItem>
-                  <SelectItem value="intermediate">Intermediate</SelectItem>
-                  <SelectItem value="advanced">Advanced</SelectItem>
+                  <SelectItem value="Beginner">Beginner</SelectItem>
+                  <SelectItem value="Intermediate">Intermediate</SelectItem>
+                  <SelectItem value="Advanced">Advanced</SelectItem>
                 </SelectContent>
               </Select>
             </div>
