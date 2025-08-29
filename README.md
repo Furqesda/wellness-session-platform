@@ -1,61 +1,54 @@
-🌿 Wellness Session Platform (Frontend-Only Demo)
+🌿 Wellness Session Platform
+
+A serene, wellness-focused web application that helps users browse, create, and manage guided wellness sessions such as meditation, yoga, mindfulness, and breathing exercises.
+
+🔗 Live Demo: Wellness Session Platform🔗 (https://wellness-session-platform.lovable.app)
+
 📖 Overview
-This project is a frontend-only implementation of the Arvyax Full Stack Internship Assignment.
-It demonstrates authentication flows, session management, draft saving, and publishing — using mock authentication and local storage to simulate backend functionality.
 
-The app is fully deployed and can be used live here:
-🔗 Live Demo: https://wellness-session-platform.lovable.app
+Wellness Session is a full-stack app built with React, TypeScript, Tailwind CSS, shadcn/ui, and Supabase.
 
+It allows users to:
+
+Sign up and log in with secure authentication.
+
+Browse public sessions created by the community.
+
+Create, edit, and delete their own wellness sessions.
+
+Favorite sessions and track progress.
+
+Personalize their profile with avatars and display names.
 ✨ Features
-Mock Authentication (login/register using local storage)
 
-Protected Routes based on mock JWT tokens
+✅ Authentication: Supabase email/password login with persistent sessions.
 
-View Public Wellness Sessions (predefined mock data)
+✅ Profiles: Editable display names, emoji or image avatars.
 
-Create, Edit, and Save Drafts
+✅ Sessions: Full CRUD support (create, browse, update, delete).
 
-Publish Sessions
+✅ Favorites & Progress: Mark sessions as completed or save them to favorites.
 
-Auto-Save Drafts after 5 seconds of inactivity
+✅ Dashboard: Quick stats, recent sessions, and shortcuts for logged-in users.
 
-Responsive UI built with Tailwind CSS + Shadcn UI
+✅ Responsive UI: Mobile-first design with Tailwind and shadcn/ui components.
+
+✅ Security: Supabase RLS policies ensure users can only access their own data.
+
+✅ Modern UX: Toast feedback, hover-lift animations, and dark mode.
 
 🛠 Tech Stack
+
 Frontend: React + Vite + TypeScript
 
-UI: Tailwind CSS + Shadcn UI
+Styling: Tailwind CSS + shadcn/ui + Lucide Icons
 
-State Management: React Hooks + Local Storage
+Backend: Supabase (Postgres, Auth, RLS)
 
-Auth: Mock JWT logic (no real backend)
+State Management: React Context + Hooks
 
-Deployment: Lovable
+Deployment: Lovable (GitHub integration, auto-deploys)
 
-⚠️ Notes on Authentication
-This project does not have a backend server.
-Authentication and session data are simulated:
-
-Users are stored in local storage
-
-Tokens are mock-generated
-
-All API calls are mocked within the frontend code
-
-This allows you to experience the full flow of the app without needing a live backend.
-If a backend were implemented, the mock API layer could be replaced with real API endpoints.
-
-
-
-📂 Folder Structure
-public/           # Static assets
-src/              # React source code
-  components/     # UI components
-  pages/          # Page-level components
-  utils/          # Helper functions (mock APIs, auth)
-index.html        # Entry HTML file
-package.json      # Project dependencies
-README.md         # Project documentation
 
 🚀 Running Locally
 Clone the repository
@@ -65,29 +58,22 @@ cd wellness-session-platform
 Install dependencies
 npm install
 
-Start the development server
+Set up environment variables
+
+Add your Supabase project URL and anon/public key in .env
+
+Start the dev server
 npm run dev
 
-Open http://localhost:5173 in your browser.
-
-📌 Mock API Endpoints (Simulated)
-| Method | Endpoint                | Description                                            |
-| ------ | ----------------------- | ------------------------------------------------------ |
-| POST   | /register               | Registers a new user (local storage)                   |
-| POST   | /login                  | Logs in a user, returns mock token                     |
-| GET    | /sessions               | Fetches public wellness sessions                       |
-| GET    | /my-sessions            | Fetches drafts & published sessions for logged-in user |
-| POST   | /my-sessions/save-draft | Saves/updates a draft session                          |
-| POST   | /my-sessions/publish    | Publishes a draft session                              |
+Open http://localhost:5173
+ in your browser.
 
 📦 Deployment
-The app is deployed via Lovable and automatically updates with GitHub commits.
-For deployment:
 
-Push to the connected GitHub repo.
+The project is deployed on Lovable.
 
-Lovable rebuilds and redeploys automatically.
+GitHub is connected for automatic syncing — commits to the main branch trigger rebuilds and redeploys.
 
-📜 License
-This project is for educational/demo purposes only.
-Not intended for production use without a backend.
+
+📜 License  
+This project is provided under the MIT License — free to use, modify, and distribute.  
