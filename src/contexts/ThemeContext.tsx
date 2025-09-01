@@ -1,10 +1,10 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 type Theme = 'light' | 'dark';
 
 interface ThemeContextType {
   theme: Theme;
-  toggleTheme: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -17,17 +17,33 @@ export const useTheme = () => {
   return context;
 };
 
-const THEME_STORAGE_KEY = 'wellness_theme';
-
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setTheme] = useState<Theme>('light');
 
   useEffect(() => {
-    // Load theme from localStorage
-    const storedTheme = localStorage.getItem(THEME_STORAGE_KEY) as Theme;
-    if (storedTheme) {
-      setTheme(storedTheme);
-    }
+    // Set up auth state listener to control theme automatically
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session?.user?.email_confirmed_at) {
+          // User is logged in and email is confirmed -> dark theme
+          setTheme('dark');
+        } else {
+          // User is not logged in or email not confirmed -> light theme
+          setTheme('light');
+        }
+      }
+    );
+
+    // Check current session on mount
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user?.email_confirmed_at) {
+        setTheme('dark');
+      } else {
+        setTheme('light');
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -38,17 +54,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } else {
       root.classList.remove('dark');
     }
-    
-    // Save theme to localStorage
-    localStorage.setItem(THEME_STORAGE_KEY, theme);
   }, [theme]);
 
-  const toggleTheme = () => {
-    setTheme(prev => prev === 'light' ? 'dark' : 'light');
-  };
-
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme }}>
       {children}
     </ThemeContext.Provider>
   );

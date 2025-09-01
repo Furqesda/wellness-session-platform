@@ -2,13 +2,11 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTheme } from '@/contexts/ThemeContext';
 import { AuthModal } from '@/components/auth/AuthModal';
-import { Leaf, Menu, X, Sun, Moon, Heart, User } from 'lucide-react';
+import { Leaf, Menu, X } from 'lucide-react';
 
 export const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
-  const { theme, toggleTheme } = useTheme();
   const location = useLocation();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
@@ -60,18 +58,8 @@ export const Navbar = () => {
               ))}
             </div>
 
-            {/* Desktop Auth & Theme */}
+            {/* Desktop Auth */}
             <div className="hidden md:flex items-center space-x-4">
-              {/* Theme Toggle */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={toggleTheme}
-                className="hover-lift wellness-transition"
-              >
-                {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-              </Button>
-
               {isAuthenticated ? (
                 <div className="flex items-center space-x-4">
                   <span className="text-sm text-muted-foreground">
@@ -137,20 +125,6 @@ export const Navbar = () => {
                     {link.label}
                   </Link>
                 ))}
-                
-                {/* Theme Toggle */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    toggleTheme();
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className="w-full justify-start"
-                >
-                  {theme === 'light' ? <Moon className="mr-2 h-4 w-4" /> : <Sun className="mr-2 h-4 w-4" />}
-                  {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
-                </Button>
 
                 {isAuthenticated ? (
                   <div className="pt-3 border-t border-border">
