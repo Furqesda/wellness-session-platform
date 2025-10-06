@@ -8,8 +8,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { profileService, UserProfile, AVAILABLE_EMOJIS } from '@/lib/profile';
+import { profileSchema } from '@/lib/validation';
 import { useToast } from '@/hooks/use-toast';
 import { Upload, User, Smile, AlertCircle } from 'lucide-react';
+import { z } from 'zod';
 
 interface EditProfileModalProps {
   isOpen: boolean;
@@ -69,13 +71,17 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   const validateForm = async (): Promise<boolean> => {
     const newErrors: { [key: string]: string } = {};
 
-    // Validate display name
-    if (!displayName.trim()) {
-      newErrors.displayName = 'Display name is required';
-    } else {
-      const isTaken = await profileService.isDisplayNameTaken(displayName.trim(), profile.id);
+    // Validate display name with Zod
+    try {
+      const validated = profileSchema.parse({ displayName: displayName.trim() });
+      
+      const isTaken = await profileService.isDisplayNameTaken(validated.displayName, profile.id);
       if (isTaken) {
         newErrors.displayName = 'This display name is already in use. Please choose a different one.';
+      }
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        newErrors.displayName = error.issues[0].message;
       }
     }
 

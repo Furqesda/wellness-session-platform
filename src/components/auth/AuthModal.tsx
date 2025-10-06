@@ -5,7 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { authSchema } from '@/lib/validation';
 import { Leaf, Loader2 } from 'lucide-react';
+import { z } from 'zod';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -34,11 +36,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setIsLoading(true);
 
     try {
+      // Validate input with Zod
+      const validationData = mode === 'signup' 
+        ? { email: formData.email, password: formData.password, name: formData.name }
+        : { email: formData.email, password: formData.password };
+      
+      const validated = authSchema.parse(validationData);
+
       let result;
       if (mode === 'login') {
-        result = await login(formData.email, formData.password);
+        result = await login(validated.email, validated.password);
       } else {
-        result = await signup(formData.email, formData.password, formData.name);
+        result = await signup(validated.email, validated.password, validated.name || '');
       }
 
       if (result.success) {
@@ -56,11 +65,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         });
       }
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: 'An unexpected error occurred'
-      });
+      if (error instanceof z.ZodError) {
+        toast({
+          variant: "destructive",
+          title: "Validation Error",
+          description: error.issues[0].message
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: 'An unexpected error occurred'
+        });
+      }
     } finally {
       setIsLoading(false);
     }

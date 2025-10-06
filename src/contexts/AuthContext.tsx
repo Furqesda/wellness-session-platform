@@ -35,27 +35,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
+        // Only synchronous state updates here to prevent deadlocks
         setSession(session);
         if (session?.user) {
-          // Get profile data to create AuthUser
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('display_name')
-            .eq('user_id', session.user.id)
-            .single();
-          
-          setUser({
-            id: session.user.id,
-            email: session.user.email || '',
-            name: profile?.display_name || session.user.email?.split('@')[0] || 'User'
-          });
-          setIsAuthenticated(true);
+          // Defer Supabase calls with setTimeout to avoid auth deadlock
+          setTimeout(() => {
+            supabase
+              .from('profiles')
+              .select('display_name')
+              .eq('user_id', session.user.id)
+              .single()
+              .then(({ data: profile }) => {
+                setUser({
+                  id: session.user.id,
+                  email: session.user.email || '',
+                  name: profile?.display_name || session.user.email?.split('@')[0] || 'User'
+                });
+                setIsAuthenticated(true);
+                setLoading(false);
+              });
+          }, 0);
         } else {
           setUser(null);
           setIsAuthenticated(false);
+          setLoading(false);
         }
-        setLoading(false);
       }
     );
 

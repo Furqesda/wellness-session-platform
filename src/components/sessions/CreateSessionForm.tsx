@@ -8,7 +8,10 @@ import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { WellnessSession } from '@/lib/sessions';
+import { sessionSchema } from '@/lib/validation';
+import { useToast } from '@/hooks/use-toast';
 import { Loader2, Play, Upload, ExternalLink } from 'lucide-react';
+import { z } from 'zod';
 
 interface CreateSessionFormProps {
   onSubmit: (sessionData: Omit<WellnessSession, 'id' | 'createdAt'>) => Promise<void>;
@@ -21,6 +24,7 @@ export const CreateSessionForm: React.FC<CreateSessionFormProps> = ({
   initialData,
   isEditing = false
 }) => {
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: initialData?.title || '',
@@ -40,7 +44,29 @@ export const CreateSessionForm: React.FC<CreateSessionFormProps> = ({
     setIsLoading(true);
 
     try {
-      await onSubmit(formData as Omit<WellnessSession, 'id' | 'createdAt'>);
+      // Validate input with Zod
+      const validated = sessionSchema.parse({
+        title: formData.title,
+        description: formData.description,
+        duration: formData.duration
+      });
+
+      await onSubmit({
+        ...formData,
+        title: validated.title,
+        description: validated.description,
+        duration: validated.duration
+      } as Omit<WellnessSession, 'id' | 'createdAt'>);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast({
+          variant: "destructive",
+          title: "Validation Error",
+          description: error.issues[0].message
+        });
+      } else {
+        throw error;
+      }
     } finally {
       setIsLoading(false);
     }
